@@ -4,6 +4,45 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
+const fallbackImage = '/images/opinion-fallback.svg';
+
+const getHeroImage = (post) => {
+  return post.github_card_image || fallbackImage;
+};
+
+const getSourceLabel = (post) => {
+  return post.github_repo ? 'GitHub Repo' : 'Opinion';
+};
+
+const getProjectTitle = (content) => {
+  const firstLine = content.split('\n')[0];
+  return firstLine.length > 80 ? firstLine.substring(0, 80) + '...' : firstLine || 'Open Source Project';
+};
+
+const extractTags = (content) => {
+  // Extract hashtags from content
+  const hashtagRegex = /#(\w+)/g;
+  const hashtags = content.match(hashtagRegex) || [];
+  return hashtags.map(tag => tag.substring(1)); // Remove the # symbol
+};
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const combineAllContent = (posts) => {
+    return posts.map((post, index) => ({
+      ...post,
+      isMain: index === 0
+    }));
+  };
+
 export default function PostPage() {
   const params = useParams();
   const [postDetails, setPostDetails] = useState([]);
@@ -556,10 +595,23 @@ export default function PostPage() {
 
           {/* Project Hero Section */}
           <div className="project-hero">
+            {/* Hero Image */}
+            <div className="hero-image-container">
+              <img 
+                src={getHeroImage(mainPost)} 
+                alt={getProjectTitle(mainPost.content)}
+                className="hero-image"
+                onError={(e) => {
+                  e.target.src = fallbackImage;
+                }}
+              />
+              <div className="hero-overlay"></div>
+            </div>
+
             <div className="project-meta">
               <span className="project-badge">
-                <i className="fab fa-github"></i>
-                Open Source Project
+                <i className={mainPost.github_repo ? "fab fa-github" : "fas fa-comment-alt"}></i>
+                {getSourceLabel(mainPost)}
               </span>
               <time className="project-date" dateTime={mainPost.date}>
                 <i className="fas fa-calendar"></i>
@@ -569,6 +621,39 @@ export default function PostPage() {
             
             <h1 className="project-title">{getProjectTitle(mainPost.content)}</h1>
             
+            {/* GitHub Repository Link */}
+            {mainPost.github_repo && (
+              <div className="github-repo-section">
+                <a 
+                  href={mainPost.github_repo} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="github-repo-link"
+                >
+                  <i className="fab fa-github"></i>
+                  <span>View on GitHub</span>
+                  <i className="fas fa-external-link-alt"></i>
+                </a>
+              </div>
+            )}
+
+            {/* Tags */}
+            {extractTags(mainPost.content).length > 0 && (
+              <div className="project-tags">
+                <span className="tags-label">
+                  <i className="fas fa-tags"></i>
+                  Tags:
+                </span>
+                <div className="tags-list">
+                  {extractTags(mainPost.content).map((tag, index) => (
+                    <span key={index} className="tag">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="project-author">
               <div className="author-info">
                 <div className="author-avatar">
@@ -576,7 +661,9 @@ export default function PostPage() {
                 </div>
                 <div className="author-details">
                   <span className="author-name">@{mainPost.username}</span>
-                  <span className="author-label">Project Contributor</span>
+                  <span className="author-label">
+                    {mainPost.github_repo ? 'Repository Maintainer' : 'Content Creator'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -697,6 +784,201 @@ export default function PostPage() {
       </footer>
 
       <style jsx global>{`
+        /* Hero Image Styles */
+        .hero-image-container {
+          position: relative;
+          width: 100%;
+          height: 300px;
+          margin-bottom: 24px;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        .hero-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+          transition: transform 0.3s ease;
+        }
+
+        .hero-image-container:hover .hero-image {
+          transform: scale(1.02);
+        }
+
+        .hero-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(
+            135deg,
+            rgba(0, 0, 0, 0.1) 0%,
+            rgba(0, 0, 0, 0.05) 50%,
+            rgba(0, 0, 0, 0.15) 100%
+          );
+          pointer-events: none;
+        }
+
+        /* GitHub Repository Link Styles */
+        .github-repo-section {
+          margin: 20px 0;
+        }
+
+        .github-repo-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 20px;
+          background: linear-gradient(135deg, #333 0%, #1a1a1a 100%);
+          color: white;
+          text-decoration: none;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 16px;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .github-repo-link:hover {
+          background: linear-gradient(135deg, #24292e 0%, #0d1117 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+          color: white;
+        }
+
+        .github-repo-link i:first-child {
+          font-size: 20px;
+        }
+
+        .github-repo-link i:last-child {
+          font-size: 14px;
+        }
+
+        /* Project Tags Styles */
+        .project-tags {
+          margin: 20px 0;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .tags-label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-weight: 600;
+          color: #666;
+          font-size: 14px;
+        }
+
+        .tags-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .tag {
+          background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+          color: #1565c0;
+          padding: 6px 12px;
+          border-radius: 16px;
+          font-size: 13px;
+          font-weight: 500;
+          border: 1px solid #90caf9;
+          transition: all 0.2s ease;
+        }
+
+        .tag:hover {
+          background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(21, 101, 192, 0.2);
+        }
+
+        /* Update project badge styles */
+        .project-badge {
+          background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+          color: white;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 14px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+        }
+
+        .project-badge i {
+          font-size: 16px;
+        }
+
+        /* Opinion badge variant */
+        .project-hero .project-meta .project-badge:has(.fa-comment-alt) {
+          background: linear-gradient(135deg, #ff6b35 0%, #e55100 100%);
+          box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+        }
+
+        /* Responsive adjustments for hero image */
+        @media screen and (max-width: 768px) {
+          .hero-image-container {
+            height: 240px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+          }
+
+          .github-repo-link {
+            padding: 10px 16px;
+            font-size: 15px;
+          }
+
+          .project-tags {
+            margin: 16px 0;
+            gap: 8px;
+          }
+
+          .tags-label {
+            font-size: 13px;
+          }
+
+          .tag {
+            padding: 4px 10px;
+            font-size: 12px;
+          }
+        }
+
+        @media screen and (max-width: 480px) {
+          .hero-image-container {
+            height: 200px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+          }
+
+          .github-repo-link {
+            padding: 8px 14px;
+            font-size: 14px;
+            gap: 8px;
+          }
+
+          .github-repo-link i:first-child {
+            font-size: 18px;
+          }
+
+          .project-tags {
+            flex-direction: column;
+            align-items: flex-start;
+            margin: 12px 0;
+          }
+
+          .tags-list {
+            width: 100%;
+            gap: 6px;
+          }
+        }
+
         .link-preview-card {
           margin: 16px auto; /* Changed from '16px 0' to '16px auto' for centering */
           border: 1px solid #e1e5e9;

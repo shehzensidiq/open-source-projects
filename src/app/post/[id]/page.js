@@ -13,7 +13,7 @@ export default function PostPage() {
   useEffect(() => {
     const fetchPostDetails = async () => {
       try {
-        const response = await fetch(`https://twitter-api.opensourceprojects.dev/threads/${params.id}`);
+        const response = await fetch(`https://twitter-api.opensourceprojects.dev//threads/${params.id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch post details');
         }
@@ -190,7 +190,7 @@ export default function PostPage() {
                 <i className="fas fa-exclamation-triangle"></i>
               </div>
               <h1>Project Not Found</h1>
-              <p>We couldn't find the project you're looking for. It might have been moved or doesn't exist.</p>
+              <p>We couldn&apos;t find the project you&apos;re looking for. It might have been moved or doesn&apos;t exist.</p>
               <p className="error-details">Error: {error} • ID: {params.id}</p>
               <Link href="/" className="btn btn-primary">
                 <i className="fas fa-arrow-left"></i>
@@ -263,7 +263,7 @@ export default function PostPage() {
                 <i className="fas fa-search"></i>
               </div>
               <h1>Project Not Found</h1>
-              <p>The project you're looking for doesn't exist or has been removed.</p>
+              <p>The project you&apos;re looking for doesn&apos;t exist or has been removed.</p>
               <Link href="/" className="btn btn-primary">
                 <i className="fas fa-arrow-left"></i>
                 <span>Back to Projects</span>

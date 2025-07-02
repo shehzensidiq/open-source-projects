@@ -1,34 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function HomePage() {
+function SearchComponent() {
+  const searchParams = useSearchParams();
   const [posts, setPosts] = useState([]);
-  const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const currentPage = parseInt(searchParams.get('page')) || 1;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredPosts, setFilteredPosts] = useState([]);
 
   useEffect(() => {
     const fetchPosts = async () => {
-      setLoading(true);
       try {
-        const url = currentPage === 1 
-          ? 'https://twitter-api.opensourceprojects.dev/threads'
-          : `https://twitter-api.opensourceprojects.dev/threads?page=${currentPage}`;
-        
-        const response = await fetch(url);
+        const response = await fetch('http://127.0.0.1:8000/threads');
         if (!response.ok) {
           throw new Error('Failed to fetch posts');
         }
         const data = await response.json();
-        setPosts(data.threads);
-        setPagination(data.pagination);
+        setPosts(data.threads || []);
+        setFilteredPosts(data.threads || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -37,154 +30,189 @@ export default function HomePage() {
     };
 
     fetchPosts();
-  }, [currentPage]);
+  }, []);
 
-  const handlePageChange = (page) => {
-    if (page === 1) {
-      router.push('/');
+  useEffect(() => {
+    const query = searchParams.get('search') || '';
+    setSearchTerm(query);
+    
+    if (query) {
+      const filtered = posts.filter(post =>
+        post.content.toLowerCase().includes(query.toLowerCase()) ||
+        post.username.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredPosts(filtered);
     } else {
-      router.push(`/?page=${page}`);
+      setFilteredPosts(posts);
+    }
+  }, [searchParams, posts]);
+
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    if (value) {
+      const filtered = posts.filter(post =>
+        post.content.toLowerCase().includes(value.toLowerCase()) ||
+        post.username.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredPosts(filtered);
+    } else {
+      setFilteredPosts(posts);
     }
   };
 
-  const renderPaginationButtons = () => {
-    if (!pagination) return null;
-
-    const buttons = [];
-    const { current_page, total_pages, has_previous, has_next } = pagination;
-
-    // Previous button
-    if (has_previous) {
-      buttons.push(
-        <button
-          key="prev"
-          onClick={() => handlePageChange(current_page - 1)}
-          className="pagination-btn pagination-nav"
-        >
-          ← Previous
-        </button>
-      );
-    }
-
-    // Page number buttons
-    const startPage = Math.max(1, current_page - 2);
-    const endPage = Math.min(total_pages, current_page + 2);
-
-    // First page and ellipsis
-    if (startPage > 1) {
-      buttons.push(
-        <button
-          key={1}
-          onClick={() => handlePageChange(1)}
-          className="pagination-btn"
-        >
-          1
-        </button>
-      );
-      if (startPage > 2) {
-        buttons.push(
-          <span key="ellipsis1" className="pagination-ellipsis">
-            ...
-          </span>
-        );
-      }
-    }
-
-    // Page numbers around current page
-    for (let i = startPage; i <= endPage; i++) {
-      buttons.push(
-        <button
-          key={i}
-          onClick={() => handlePageChange(i)}
-          className={`pagination-btn ${i === current_page ? 'current' : ''}`}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    // Last page and ellipsis
-    if (endPage < total_pages) {
-      if (endPage < total_pages - 1) {
-        buttons.push(
-          <span key="ellipsis2" className="pagination-ellipsis">
-            ...
-          </span>
-        );
-      }
-      buttons.push(
-        <button
-          key={total_pages}
-          onClick={() => handlePageChange(total_pages)}
-          className="pagination-btn"
-        >
-          {total_pages}
-        </button>
-      );
-    }
-
-    // Next button
-    if (has_next) {
-      buttons.push(
-        <button
-          key="next"
-          onClick={() => handlePageChange(current_page + 1)}
-          className="pagination-btn pagination-nav"
-        >
-          Next →
-        </button>
-      );
-    }
-
-    return buttons;
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
-  if (loading) {
-    return (
-      <div className="grain-overlay"></div>
-    );
-  }
+  const truncateContent = (content, maxLength = 150) => {
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
+  };
 
-  if (error) {
-    return (
-      <>
-        <div className="grain-overlay"></div>
-        <header className="header">
-          <nav className="nav">
-            <div className="nav-brand">
-              <Link href="/" className="brand-link">
-                <i className="fab fa-github brand-icon"></i>
-                <span className="brand-text">Open-source Projects</span>
-              </Link>
+  return (
+    <>
+      <section className="hero">
+        <div className="container">
+          <div className="hero-content">
+            <h1 className="hero-title">
+              <span className="gradient-text">Open-source</span> Projects
+            </h1>
+            <p className="hero-subtitle">
+              Discover amazing open-source projects and hidden gems from the developer community
+            </p>
+            <div className="hero-search">
+              <div className="search-container">
+                <i className="fas fa-search search-icon"></i>
+                <input
+                  type="text"
+                  placeholder="Search projects, contributors, or topics..."
+                  className="search-input"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                />
+              </div>
             </div>
-            <div className="nav-links">
-              <Link href="/" className="nav-link">
-                <i className="fas fa-home"></i>
-                <span>Home</span>
-              </Link>
-              <Link href="#" className="nav-link">
-                <i className="fas fa-star"></i>
-                <span>Featured</span>
-              </Link>
-              <Link href="#" className="nav-link">
-                <i className="fas fa-gem"></i>
-                <span>Hidden Gems</span>
-              </Link>
-            </div>
-          </nav>
-        </header>
-        <main className="main">
-          <div className="error-container">
-            <h1>Error loading posts: {error}</h1>
-            <button onClick={() => window.location.reload()} className="retry-btn">
-              Try Again
-            </button>
           </div>
-        </main>
-      </>
-    );
-  }
+        </div>
+      </section>
 
+      <section className="projects">
+        <div className="container">
+          <div className="section-header">
+            <h2 className="section-title">
+              <i className="fas fa-rocket"></i>
+              Featured Projects
+            </h2>
+            <p className="section-subtitle">
+              {filteredPosts.length} {filteredPosts.length === 1 ? 'project' : 'projects'} found
+              {searchTerm && ` for "${searchTerm}"`}
+            </p>
+          </div>
+
+          {loading && (
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <p>Loading amazing projects...</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="error-container">
+              <i className="fas fa-exclamation-triangle"></i>
+              <h3>Oops! Something went wrong</h3>
+              <p>We couldn&apos;t load the projects. Please try again later.</p>
+              <p className="error-details">Error: {error}</p>
+            </div>
+          )}
+
+          {!loading && !error && filteredPosts.length === 0 && (
+            <div className="empty-state">
+              <i className="fas fa-search"></i>
+              <h3>No projects found</h3>
+              <p>
+                {searchTerm 
+                  ? `No projects match your search for "${searchTerm}". Try different keywords.`
+                  : 'No projects available at the moment. Check back later!'
+                }
+              </p>
+            </div>
+          )}
+
+          {!loading && !error && filteredPosts.length > 0 && (
+            <div className="projects-grid">
+              {filteredPosts.map((post) => (
+                <article key={post.id} className="project-card">
+                  <div className="card-header">
+                    <div className="project-meta">
+                      <span className="project-id">#{post.id}</span>
+                      <time className="project-date" dateTime={post.date}>
+                        <i className="fas fa-calendar"></i>
+                        {formatDate(post.date)}
+                      </time>
+                    </div>
+                  </div>
+                  
+                  <div className="card-content">
+                    <h3 className="project-title">
+                      {truncateContent(post.content, 80)}
+                    </h3>
+                    <p className="project-description">
+                      {truncateContent(post.content, 150)}
+                    </p>
+                    
+                    <div className="project-author">
+                      <div className="author-avatar">
+                        <i className="fas fa-user"></i>
+                      </div>
+                      <div className="author-info">
+                        <span className="author-name">@{post.username}</span>
+                        <span className="author-label">Contributor</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="card-footer">
+                    <Link 
+                      href={`/post/${post.conversation_id}`} 
+                      className="btn btn-primary"
+                    >
+                      <i className="fas fa-arrow-right"></i>
+                      <span>View Project</span>
+                    </Link>
+                    
+                    <div className="project-stats">
+                      <span className="stat">
+                        <i className="fas fa-code"></i>
+                        Open Source
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function SearchFallback() {
+  return (
+    <div className="loading-container">
+      <div className="loading-spinner"></div>
+      <p>Loading search...</p>
+    </div>
+  );
+}
+
+export default function HomePage() {
   return (
     <>
       <div className="grain-overlay"></div>
@@ -198,7 +226,7 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="nav-links">
-            <Link href="/" className="nav-link">
+            <Link href="/" className="nav-link active">
               <i className="fas fa-home"></i>
               <span>Home</span>
             </Link>
@@ -215,107 +243,9 @@ export default function HomePage() {
       </header>
 
       <main className="main">
-        <section className="hero">
-          <div className="hero-content">
-            <h1 className="hero-title">
-              Discover Amazing
-              <span className="gradient-text">Open-source Projects</span>
-            </h1>
-            <p className="hero-description">
-              Curating the best open-source projects, hidden gems, and innovative tools that are shaping the future of development.
-            </p>
-            <div className="hero-stats">
-              <div className="stat">
-                <span className="stat-number">{pagination?.total_items || 0}</span>
-                <span className="stat-label">Projects Featured</span>
-              </div>
-              <div className="stat">
-                <span className="stat-number">∞</span>
-                <span className="stat-label">Possibilities</span>
-              </div>
-              <div className="stat">
-                <span className="stat-number">100%</span>
-                <span className="stat-label">Open Source</span>
-              </div>
-            </div>
-          </div>
-          <div className="hero-visual">
-            <div className="code-window">
-              <div className="window-header">
-                <div className="window-controls">
-                  <span className="control close"></span>
-                  <span className="control minimize"></span>
-                  <span className="control maximize"></span>
-                </div>
-                <span className="window-title">open-source-projects.json</span>
-              </div>
-              <div className="code-content">
-                <pre><code>{`{
-  "mission": "showcase_amazing_projects",
-  "focus": ["innovation", "quality", "community"],
-  "hidden_gems": true,
-  "trending": true,
-  "status": "actively_curated"
-}`}</code></pre>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="projects-section">
-          <div className="section-header">
-            <h2 className="section-title">Featured Projects</h2>
-            <p className="section-description">
-              Hand-picked open-source projects that are making waves in the developer community
-            </p>
-          </div>
-
-          <div className="projects-grid">
-            {posts.map((post, index) => (
-              <article key={post.id} className="project-card" style={{animationDelay: `${(index % 6) * 0.1}s`}}>
-                <div className="card-header">
-                  <div className="card-meta">
-                    <span className="card-category">Open Source</span>
-                    <time className="card-date" dateTime={post.date}>
-                      {new Date(post.date).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </time>
-                  </div>
-                </div>
-                <div className="card-content">
-                  <h3 className="card-title">
-                    <Link href={`/post/${post.conversation_id}`}>
-                      {post.content.length > 80 
-                        ? `${post.content.substring(0, 80)}...` 
-                        : post.content}
-                    </Link>
-                  </h3>
-                  <p className="card-excerpt">
-                    By @{post.username} • {post.content}
-                  </p>
-                </div>
-                <div className="card-footer">
-                  <div className="card-links">
-                    {/* You can add social links here if available in your data */}
-                  </div>
-                  <Link href={`/post/${post.conversation_id}`} className="read-more">
-                    <span>Learn More</span>
-                    <i className="fas fa-arrow-right"></i>
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          {pagination && pagination.total_pages > 1 && (
-            <div className="pagination">
-              {renderPaginationButtons()}
-            </div>
-          )}
-        </section>
+        <Suspense fallback={<SearchFallback />}>
+          <SearchComponent />
+        </Suspense>
       </main>
 
       <footer className="footer">
@@ -323,6 +253,15 @@ export default function HomePage() {
           <div className="footer-section">
             <h3>Open-source Projects</h3>
             <p>Discovering and showcasing the best open-source projects and hidden gems in the developer community.</p>
+          </div>
+          <div className="footer-section">
+            <h4>Quick Links</h4>
+            <ul className="footer-links">
+              <li><Link href="/">Home</Link></li>
+              <li><Link href="#">Featured</Link></li>
+              <li><Link href="#">Hidden Gems</Link></li>
+              <li><Link href="#">About</Link></li>
+            </ul>
           </div>
           <div className="footer-section">
             <h4>Connect</h4>
@@ -340,7 +279,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>&copy; 2024 Open-source Projects. Built with <i className="fas fa-heart"></i> for the community.</p>
+          <p>© 2024 Open-source Projects. Built with <i className="fas fa-heart"></i> for the community.</p>
         </div>
       </footer>
     </>

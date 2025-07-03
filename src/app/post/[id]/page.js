@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
-const fallbackImage = '/images/opinion-fallback.svg';
+const fallbackImage = '/images/open-source-logo-830x460.jpg';
 
 const getHeroImage = (post) => {
   return post.github_card_image || fallbackImage;

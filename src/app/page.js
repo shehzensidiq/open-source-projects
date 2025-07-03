@@ -49,7 +49,7 @@ function HomePageContent() {
 
   // Function to get fallback image
   const getFallbackImage = () => {
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDQwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjVGN0ZBIi8+CjxwYXRoIGQ9Ik0xNzUgNzVIMjI1VjEyNUgxNzVWNzVaIiBmaWxsPSIjRTFFNUU5Ii8+CjxwYXRoIGQ9Ik0xOTAgOTBIMjEwVjExMEgxOTBWOTBaIiBmaWxsPSIjMDA2NkNDIi8+CjxwYXRoIGQ9Ik0xNjAgMTQwSDI0MEgxNjBWMTQwWiIgZmlsbD0iI0UxRTVFOSIvPgo8cGF0aCBkPSJNMTcwIDE1MEgyMzBIMTcwVjE1MFoiIGZpbGw9IiNDQkQ1RTAiLz4KPHRleHQgeD0iMjAwIiB5PSIxNzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2Qzc1N0QiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiI+T3BlbiBTb3VyY2UgUHJvamVjdDwvdGV4dD4KPHN2Zz4K';
+    return '/images/open-source-logo-830x460.jpg';
   };
 
   // Function to extract repository name from GitHub URL

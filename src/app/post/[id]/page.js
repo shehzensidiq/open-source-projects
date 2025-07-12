@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import TwitterMetrics from '../../components/TwitterMetrics';
+import NewsletterForm from '../../components/NewsletterForm';
 
 const fallbackImage = '/images/open-source-logo-830x460.jpg';
 
@@ -676,6 +677,8 @@ export default function PostPage() {
             </div>
           </div>
 
+          
+
           {/* Project Content */}
           <div className="project-content">
             <article className="project-article">
@@ -747,9 +750,7 @@ export default function PostPage() {
                 />
               </div>
             </article>
-          </div>
-
-          {/* Navigation */}
+          </div>          {/* Navigation */}
           <div className="project-navigation">
             <Link href="/" className="btn btn-outline">
               <i className="fas fa-arrow-left"></i>

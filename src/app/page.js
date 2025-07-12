@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import NewsletterForm from './components/NewsletterForm';
 
 function HomePageContent() {
   const [posts, setPosts] = useState([]);
@@ -305,6 +306,7 @@ function HomePageContent() {
                 <span className="stat-label">Open Source</span>
               </div>
             </div>
+            <NewsletterForm />
           </div>
           <div className="hero-visual">
             <div className="code-window">
